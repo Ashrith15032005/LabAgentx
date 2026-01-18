@@ -23,11 +23,17 @@ equipment calibration status, existing reservations, and researcher identity.
 ## 🧠 System Architecture
 
 Streamlit Web UI
+
 ↓
+
 Authentication Module
+
 ↓
+
 LabAgent Scheduling Logic
+
 ↓
+
 SQLite Database
 
 ---
@@ -36,13 +42,21 @@ SQLite Database
 
 labagent_prototype/
 │
+|
 ├── app.py # Streamlit UI & navigation
+|
 ├── db.py # Database connection & initialization
+|
 ├── auth.py # Login & Sign-up logic
+|
 ├── agent.py # Booking & conflict resolution logic
+|
 ├── calendar_utils.py # Availability calendar generation
+|
 ├── seed_db.py # One-time database seeding
+|
 ├── requirements.txt
+|
 └── README.md
 
 ---
