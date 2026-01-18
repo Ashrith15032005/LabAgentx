@@ -10,6 +10,11 @@ cur = conn.cursor()
 cur.execute("DELETE FROM bookings")
 cur.execute("DELETE FROM researchers")
 cur.execute("DELETE FROM equipment")
+cur.execute(
+    "INSERT OR IGNORE INTO admin (username, password) VALUES (?, ?)",
+    ("admin", "admin123")
+)
+
 
 # Insert researchers
 cur.executemany(
@@ -30,6 +35,7 @@ cur.executemany(
         (2, "Confocal Microscope", date.today() - timedelta(days=45), 30)
     ]
 )
+
 
 conn.commit()
 conn.close()

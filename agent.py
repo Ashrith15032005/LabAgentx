@@ -1,23 +1,40 @@
 from datetime import date
 from db import get_connection
 
+
 def book_equipment(researcher_id, equipment_id, booking_date):
     conn = get_connection()
     cur = conn.cursor()
 
-    # Fetch calibration details
-    cur.execute(
-        "SELECT last_calibration, calibration_interval FROM equipment WHERE id=?",
-        (equipment_id,)
-    )
-    last_cal, interval = cur.fetchone()
-    days = (date.today() - date.fromisoformat(last_cal)).days
+    # Fetch equipment status
+    cur.execute("""
+        SELECT last_calibration, calibration_interval, under_maintenance
+        FROM equipment
+        WHERE id=?
+    """, (equipment_id,))
+    result = cur.fetchone()
 
-    if days > interval:
+    if not result:
         conn.close()
-        return False, f"❌ Calibration expired ({days} days old)."
+        return False, "Equipment not found."
 
-    # Conflict check with researcher name
+    last_calibration, calibration_interval, under_maintenance = result
+
+    # Rule 1: Maintenance check
+    if under_maintenance == 1:
+        conn.close()
+        return False, "Booking rejected: Equipment is under maintenance."
+
+    # Rule 2: Calibration validity check
+    days_since_calibration = (
+        date.today() - date.fromisoformat(last_calibration)
+    ).days
+
+    if days_since_calibration > calibration_interval:
+        conn.close()
+        return False, "Booking rejected: Calibration has expired."
+
+    # Rule 3: Booking conflict check
     cur.execute("""
         SELECT r.name
         FROM bookings b
@@ -28,9 +45,9 @@ def book_equipment(researcher_id, equipment_id, booking_date):
     conflict = cur.fetchone()
     if conflict:
         conn.close()
-        return False, f"❌ Equipment already booked by {conflict[0]}."
+        return False, f"Booking rejected: Already booked by {conflict[0]}."
 
-    # Insert booking
+    # Rule 4: Accept booking
     cur.execute("""
         INSERT INTO bookings (researcher_id, equipment_id, booking_date)
         VALUES (?, ?, ?)
@@ -38,4 +55,5 @@ def book_equipment(researcher_id, equipment_id, booking_date):
 
     conn.commit()
     conn.close()
-    return True, "✅ Equipment booked successfully."
+
+    return True, "Booking approved successfully."
